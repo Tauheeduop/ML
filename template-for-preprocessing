@@ -1,0 +1,128 @@
+from pathlib import Path
+
+# Create the universal EDA + preprocessing notebook in Python format (.ipynb alternative)
+template_code = """\
+# ============================================================
+# UNIVERSAL EDA + DATA PREPROCESSING TEMPLATE
+# ============================================================
+
+# 1️⃣ Import Libraries
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+# ============================================================
+# 2️⃣ Load Dataset
+# ============================================================
+df = pd.read_csv("data.csv")   # Replace with your dataset
+print("Shape:", df.shape)
+df.head()
+
+# ============================================================
+# 3️⃣ Data Overview
+# ============================================================
+print("\\n--- Basic Info ---")
+df.info()
+
+print("\\n--- Summary (Numeric) ---")
+print(df.describe())
+
+print("\\n--- Summary (Categorical) ---")
+print(df.describe(include='object'))
+
+print("\\n--- Missing Values ---")
+print(df.isnull().sum())
+
+sns.heatmap(df.isnull(), cbar=False)
+plt.title("Missing Values Heatmap")
+plt.show()
+
+# ============================================================
+# 4️⃣ Handle Missing Values
+# ============================================================
+# Numeric columns: fill with median
+num_cols = df.select_dtypes(include=['int64', 'float64']).columns
+for col in num_cols:
+    df[col].fillna(df[col].median(), inplace=True)
+
+# Categorical columns: fill with mode
+cat_cols = df.select_dtypes(include=['object']).columns
+for col in cat_cols:
+    df[col].fillna(df[col].mode()[0], inplace=True)
+
+# ============================================================
+# 5️⃣ Remove Duplicates & Handle Outliers
+# ============================================================
+df.drop_duplicates(inplace=True)
+
+# Example: Remove outliers using IQR method
+for col in num_cols:
+    Q1 = df[col].quantile(0.25)
+    Q3 = df[col].quantile(0.75)
+    IQR = Q3 - Q1
+    df = df[(df[col] >= Q1 - 1.5*IQR) & (df[col] <= Q3 + 1.5*IQR)]
+
+# ============================================================
+# 6️⃣ Fix Data Types & Clean Strings
+# ============================================================
+# Example: Convert object date to datetime
+# df['date'] = pd.to_datetime(df['date'])
+
+# Clean text data
+for col in cat_cols:
+    df[col] = df[col].astype(str).str.strip().str.lower()
+
+# ============================================================
+# 7️⃣ Univariate Analysis
+# ============================================================
+df.hist(figsize=(12,8))
+plt.show()
+
+for col in cat_cols:
+    sns.countplot(x=col, data=df)
+    plt.show()
+
+# ============================================================
+# 8️⃣ Bivariate Analysis
+# ============================================================
+# Example: relation between two variables
+sns.pairplot(df[num_cols])
+plt.show()
+
+# ============================================================
+# 9️⃣ Encode Categorical Variables
+# ============================================================
+le = LabelEncoder()
+for col in cat_cols:
+    df[col] = le.fit_transform(df[col])
+
+# ============================================================
+# 🔟 Feature Scaling
+# ============================================================
+scaler = StandardScaler()
+df[num_cols] = scaler.fit_transform(df[num_cols])
+
+# ============================================================
+# 11️⃣ Correlation
+# ============================================================
+sns.heatmap(df.corr(), annot=True, cmap="coolwarm")
+plt.show()
+
+# ============================================================
+# 12️⃣ Save Clean Dataset
+# ============================================================
+df.to_csv("cleaned_data.csv", index=False)
+print("✅ Cleaned dataset saved as cleaned_data.csv")
+
+# ============================================================
+# 🎯 Dataset is now ML-Ready!
+# ============================================================
+"""
+
+# Save to file
+file_path = Path("/mnt/data/EDA_Preprocessing_Template.py")
+file_path.write_text(template_code)
+
+file_path
